@@ -71,12 +71,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       theta = measurement_pack.raw_measurements_[1];
       ro_dot = measurement_pack.raw_measurements_[2];
       
-      float px, py;
-      
-      py = (ro*ro)/(sqrt(1 + pow(tan(theta), 2)));
-      px = py * tan(theta);
-      ekf_.x_(0) = px;
-      ekf_.x_(1) = py;
+      ekf_.x_(0) = ro * cos(theta);
+      ekf_.x_(1) = ro * sin(theta);
       ekf_.x_(2) = ro_dot * cos(theta);
       ekf_.x_(3) = ro_dot * sin(theta);
 
@@ -85,6 +81,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       // TODO: Initialize state.
       ekf_.x_(0) = measurement_pack.raw_measurements_[0];
       ekf_.x_(1) = measurement_pack.raw_measurements_[1];
+      ekf_.x_(2) = 0.;
+      ekf_.x_(3) = 0.;
     }
     previous_timestamp_ = measurement_pack.timestamp_;
 
@@ -123,10 +121,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   ekf_.Q_ = MatrixXd(4, 4);
   
-  ekf_.Q_ << dt_4*noise_ax_2/4, 0, dt_3 * noise_ax_2/2, 0,
-             0, dt_4*noise_ay_2/4, 0, dt_3 * noise_ay_2/2,
-             dt_3*noise_ax_2/2, 0, dt_2 * noise_ax_2, 0,
-             0, dt_3*noise_ay_2/2, 0, dt_2 * noise_ay_2;
+  ekf_.Q_ << dt_4*noise_ax/4, 0, dt_3 * noise_ax/2, 0,
+             0, dt_4*noise_ay/4, 0, dt_3 * noise_ay/2,
+             dt_3*noise_ax/2, 0, dt_2 * noise_ax, 0,
+             0, dt_3*noise_ay/2, 0, dt_2 * noise_ay;
 
   ekf_.P_ = MatrixXd(4, 4);
 
@@ -155,7 +153,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.R_ = R_radar_;
     Hj_ = tools.CalculateJacobian(ekf_.x_);
     ekf_.H_ = Hj_;
-    ekf_.UpdateEKF(z);
+    ekf_.UpdateEKF(measurement_pack.raw_measurements_);
 
   } else {
     // TODO: Laser updates
@@ -163,7 +161,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.H_ = H_laser_;
     VectorXd z(2);
     z << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1];
-    ekf_.Update(z);
+    ekf_.Update(measurement_pack.raw_measurements_);
   }
 
   // print the output
