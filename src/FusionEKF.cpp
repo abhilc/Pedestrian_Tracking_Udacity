@@ -38,6 +38,12 @@ FusionEKF::FusionEKF() {
    */
   H_laser_ << 1, 0, 0, 0,
              0, 1, 0, 0;
+  ekf_.P_ = MatrixXd(4, 4);
+
+  ekf_.P_ << 1, 0, 0, 0,
+             0, 1, 0, 0,
+             0, 0, 1000, 0,
+             0, 0, 0, 1000;
 
 
 }
@@ -103,13 +109,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
   float noise_ax = 9, noise_ay = 9;
   long long current_timestamp_ = measurement_pack.timestamp_;
-  float dt = (current_timestamp_ - previous_timestamp_)/1000000.0;
-  float dt_2 = dt * dt;
-  float dt_3 = dt_2 * dt;
-  float dt_4 = dt_3 * dt;
-  float noise_ax_2 = noise_ax * noise_ax;
-  float noise_ay_2 = noise_ay * noise_ay;
-
+  double dt = (current_timestamp_ - previous_timestamp_)/1000000.0;
+  double dt_2 = dt * dt;
+  double dt_3 = dt_2 * dt;
+  double dt_4 = dt_3 * dt;
   
   previous_timestamp_ = current_timestamp_;
 
@@ -126,12 +129,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
              dt_3*noise_ax/2, 0, dt_2 * noise_ax, 0,
              0, dt_3*noise_ay/2, 0, dt_2 * noise_ay;
 
-  ekf_.P_ = MatrixXd(4, 4);
-
-  ekf_.P_ << 1, 0, 0, 0,
-             0, 1, 0, 0,
-             0, 0, 1000, 0,
-             0, 0, 0, 1000;
   
 
   ekf_.Predict();
@@ -148,8 +145,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // TODO: Radar updates
-    VectorXd z(3);
-    z << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], measurement_pack.raw_measurements_[2];
     ekf_.R_ = R_radar_;
     Hj_ = tools.CalculateJacobian(ekf_.x_);
     ekf_.H_ = Hj_;
@@ -159,8 +154,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // TODO: Laser updates
     ekf_.R_ = R_laser_;
     ekf_.H_ = H_laser_;
-    VectorXd z(2);
-    z << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1];
     ekf_.Update(measurement_pack.raw_measurements_);
   }
 
