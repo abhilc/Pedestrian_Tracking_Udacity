@@ -99,7 +99,13 @@ Following steps were followed in the implementation of the algorithm:
 
 For DataSet 1, it can be seen from the results that RMSE are within the allowed benchmark
 
+<p>
+  <img src="writeup_images/Screenshot 2021-09-10 at 12.13.39 PM.png"/>
+</p>
+
 
 For DataSet 2, it can be seen from the results that RMSE are within the allowed benchmark
-
+<p>
+  <img src="writeup_images/Screenshot 2021-09-10 at 12.14.16 PM.png"/>
+</p>
 
