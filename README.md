@@ -61,69 +61,45 @@ OUTPUT: values provided by the c++ program to the simulator
    * On windows, you may need to run: `cmake .. -G "Unix Makefiles" && make`
 4. Run it: `./ExtendedKF `
 
-## Editor Settings
+## Extended Kalman Filter - Algorithm
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+Goal: With the incoming measurements from two sensors(Radar and Laser), Implement a filter such that the vehicle tracked is as close as possible to the ground truth data. To measure the error of Kalman Filter Prediction and Update Step, Root Mean Square Error(RMSE) is computed. The allowed benchmark for RMSE for position(px, py) and velocity vector(vx, xy) is RMSE <= [.11, .11, 0.52, 0.52]
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+Following steps were followed in the implementation of the algorithm:
+1. In file FusionEKF.cpp, the following Kalman Filter Matrices are initialized in the class' constructor method.
+   
+   R_laser : Measurement Noise Matrix for Laser data
+   R_radar : Measurement Noise Matrix for Radar data
+   H_laser : Matrix that converts the predictions to laser measurement space(Drops the velocities from the prediction state vector)
+   H_j     : Jacobian Matrix. This matrix contains partial derivatives(Linear approximations) to convert prediction state vector to Radar measurement space
+   P Matrix: This Matrix is a state covariance matrix. 
 
-## Code Style
+2. In file main.cpp, the measurements from Laser and Radar are copied to the measurement_package structure. The method ProcessMeasurements is called(This is defined    in FusionEKF.cpp. 
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+3. In method ProcessMeasurements:
+   a. When the very first measurement arrives, The state vector X is initialized. The timestamp of the first measurement is recorded. 
+   b. From second measurment onwards, the time difference dt is computed. The state transition matrix F, the covariance Matrix Q are initialized
+   c. Depending on the type of this measurement(Laser or Radar), The measurement noise matrices(R_laser or R_radar), The measurement update matrices(H_laser or           H_jacobian) are assigned to Kalman Filter variables. 
+   d. The Predict() method is called to Predict the State Vector
+   e. The Update() method is called to Correct the State Vector is the incoming measurement is Laser, otherwise UpdateEKF() method is called. 
 
-## Generating Additional Data
+4. The methods Predict(), Update() and UpdateEKF methods are defined in kalman_filter.cpp file
 
-This is optional!
+5. The Predict() method implements the Kalman Filter Prediction Equations(See kalman_filter.cpp Predict() method for implementation)
 
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
+6. The Update() method implements the correction step for Laser. Here, the predicted state vector is corrected by computing the Kalman Gain, K. 
 
-## Project Instructions and Rubric
+7. The UpdateEKF() method implements the correction step for Radar. Here the predicted state vector is corrected by computing the Kalman Gain, K. 
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+8. In tools.cpp file, Functions that compute RMSE(Root Mean Squared Error) and Jacobian Matrix(H_j) are implemented. 
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project resources page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/382ebfd6-1d55-4487-84a5-b6a5a4ba1e47)
-for instructions and the project rubric.
+9. After each Prediction and Update step, the RMSE method is called with arguments(estimation and ground_truth). This method then returns by how much the              estimations deviate from the ground truth. 
 
-## Hints and Tips!
+## Simulator Results
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-* Students have reported rapid expansion of log files when using the term 2 simulator.  This appears to be associated with not being connected to uWebSockets.  If this does occur,  please make sure you are conneted to uWebSockets. The following workaround may also be effective at preventing large log files.
+For DataSet 1, it can be seen from the results that RMSE are within the allowed benchmark
 
-    + create an empty log file
-    + remove write permissions so that the simulator can't write to log
- * Please note that the ```Eigen``` library does not initialize ```VectorXd``` or ```MatrixXd``` objects with zeros upon creation.
 
-## Call for IDE Profiles Pull Requests
+For DataSet 2, it can be seen from the results that RMSE are within the allowed benchmark
 
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
-
-However! We'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Regardless of the IDE used, every submitted project must
-still be compilable with cmake and make.
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
